@@ -1,0 +1,20 @@
+[tool.poetry]
+name = "fam-llm"
+version = "0.1.0"
+description = ""
+authors = ["Yash Kumar Verma <yash.verma@fampay.in>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.9"
+chromadb = "^0.5.0"
+openai = "^1.30.5"
+chroma = "^0.2.0"
+chainlit = "^1.1.202"
+pydantic = "^2.7.2"
+pytest = "^8.2.1"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
