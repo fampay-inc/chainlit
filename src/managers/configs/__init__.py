@@ -1,7 +1,7 @@
 import os
 from typing import Any, Dict
 
-from pydantic import BaseModel, SecretStr, ValidationError
+from pydantic import BaseModel, ValidationError
 
 from .llm import LLMConfig
 from .secrets import SecretConfig
@@ -9,13 +9,16 @@ from .secrets import SecretConfig
 
 class ConfigurationsManager:
     ENV_KEYS = {
-        "llm__temperature": "LLM_TEMPERATURE",
-        "secret__some_key": "SECRET_SOME_KEY"
+        "secret__api_key": "API_KEY",
+        "secret__api_endpoint": "API_ENDPOINT",
+        "secret__api_version": "API_VERSION",
+        "secret__api_deployment": "API_DEPLOYMENT",
+        "secret__embedding_deployment": "EMBEDDING_DEPLOYMENT",
     }
 
     class ConfigModel(BaseModel):
         llm: LLMConfig = LLMConfig()
-        secret: SecretConfig = SecretConfig(some_key=SecretStr("default_secret"))
+        secret: SecretConfig = SecretConfig()
 
     def __init__(self):
         self._load_config()
