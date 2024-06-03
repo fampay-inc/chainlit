@@ -8,3 +8,5 @@ class LLMConfig(BaseModel):
 
     # https://platform.openai.com/docs/guides/embeddings/embedding-models
     embedding_model_name: StrictStr = Field(default="text-embedding-3-small", description="Model name for the LLM")
+
+    document_as_rag_source: StrictStr = Field(default="june-3", description="Path to the live source file")

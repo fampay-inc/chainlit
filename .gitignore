@@ -1,3 +1,4 @@
 .idea
 launch.sh
 .env
+data/processed/*

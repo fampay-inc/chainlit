@@ -1,10 +1,15 @@
+import logging
+
 import chromadb
 from chromadb.utils.embedding_functions import OpenAIEmbeddingFunction
+from pdfminer.high_level import extract_text
 
 from src.llm import LLM
 from src.managers.configs import ConfigurationsManager
 
 config_manager = ConfigurationsManager()
+
+LOGGER = logging.getLogger(__name__)
 
 
 class ChromaVectorManager:
@@ -12,9 +17,25 @@ class ChromaVectorManager:
 
     def __init__(self, llm_client: LLM):
         self.llm_client = llm_client
-        self.vector_client = chromadb.PersistentClient(path="./embeddings")
+        self.vector_client = chromadb.PersistentClient(path="./data/processed")
+
+    def create_collection(self, identifier):
+        embedding_model = config_manager.config.llm.embedding_model_name
+        collection_name = f"{embedding_model}-{identifier}"
+        self.vector_client.create_collection(collection_name)
+
+    def generate_document_embeddings(self):
+        identifier = config_manager.config.llm.document_as_rag_source
+        path = f"./data/documents/{identifier}.pdf"
+        pdf_content = extract_text(path)
+        delimiter = '------------------------------------------'
+        chunks = pdf_content.split(delimiter)
+        chunks = [chunk.strip() for chunk in chunks if chunk.strip()]
+        self.create_and_store_embeddings(identifier, chunks)
 
     def create_and_store_embeddings(self, identifier: str, chunks: list):
+        self.create_collection(identifier)
+
         embedding_model = config_manager.config.llm.embedding_model_name
         embedding_function = OpenAIEmbeddingFunction(
             api_key=config_manager.config.secret.api_key,
@@ -22,7 +43,7 @@ class ChromaVectorManager:
         )
 
         collection_name = f"{embedding_model}-{identifier}"
-        vector_collection = self.vector_client.get_or_create_collection(
+        vector_collection = self.vector_client.get_collection(
             name=collection_name,
             embedding_function=embedding_function,
         )
@@ -34,10 +55,13 @@ class ChromaVectorManager:
                 embeddings=[embedding],
                 metadatas=[{"text": chunk}],
             )
+            print(f"Progress: {i}/{len(chunks)}, Percent: {i / len(chunks) * 100}%")
 
-    def get_related_documents(self, identifier: str, search_vector: any, k: int = 2):
+    def get_related_documents(self, search_vector: any, k: int = 2):
+        identifier = config_manager.config.llm.document_as_rag_source
         embedding_model = config_manager.config.llm.embedding_model_name
         collection_name = f"{embedding_model}-{identifier}"
+
         vector_collection = self.vector_client.get_collection(collection_name)
         response = vector_collection.query(
             query_embeddings=search_vector,
@@ -48,12 +72,13 @@ class ChromaVectorManager:
 
 
 """
-Code to test the ChromaVectorManager class
+Directly execute this file to generate embeddings
 """
-# llm_client = LLM()
-# x = ChromaVectorManager(llm_client)
-# x.create_and_store_embeddings("debug", ["earth is a flat planet", "venus is yellow planet", "marks is pink", "apple are red", "earth is blue", "fampay is fintech"])
-#
-# search_string = llm_client.get_embedding("earth planet")
-# response = x.get_related_documents("debug", search_string, 3)
-# print(response)
+if __name__ == "__main__":
+    llm_client = LLM()
+    x = ChromaVectorManager(llm_client)
+    x.generate_document_embeddings()
+
+    search_string = llm_client.get_embedding("how can i save money?")
+    response = x.get_related_documents(search_string, 3)
+    print(response)
