@@ -1,4 +1,5 @@
 import logging
+from typing import Optional
 
 import chainlit
 
@@ -13,6 +14,25 @@ LOGGER = logging.getLogger(__name__)
 llm = LLM()
 config_manager = ConfigurationsManager()
 vector_storage = ChromaVectorManager(llm)
+
+
+@chainlit.oauth_callback
+def oauth_callback(
+        provider_id: str,
+        token: str,
+        raw_user_data,
+        default_user,
+) -> Optional[chainlit.User]:
+    allowed_domains = ["fampay.in", "triotech.co.in", ]
+    allowed_emails = []
+    if provider_id == "google":
+        user_email = raw_user_data["email"]
+        user_domain = user_email.split('@')[-1]
+
+        if user_email in allowed_emails or user_domain in allowed_domains:
+            return default_user
+
+    return None
 
 
 @chainlit.on_chat_start
