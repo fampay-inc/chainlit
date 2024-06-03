@@ -5,11 +5,14 @@ import chainlit
 from src.llm import LLM
 from src.managers.chat_hisory import InMemoryChatHistoryManager
 from src.managers.configs import ConfigurationsManager
+from src.managers.prompt.PromptManager import PromptManager
+from src.vector_storage.chroma import ChromaVectorManager
 
 LOGGER = logging.getLogger(__name__)
 
 llm = LLM()
 config_manager = ConfigurationsManager()
+vector_storage = ChromaVectorManager(llm)
 
 
 @chainlit.on_chat_start
@@ -35,8 +38,18 @@ async def on_message_handler(message: chainlit.Message):
     user_message = message.content.lower()
     memory.save_user_message(user_message)
 
-    conversation_ctx = memory.get_last_n_messages(3)
-    completion = llm.get_chat_completion(conversation_ctx)
+    # get related documents from user's message
+    users_message_vector = llm.get_embedding(user_message)
+
+    rag_count = config_manager.config.llm.rag_context_length
+    raw_related_docs = vector_storage.get_related_documents(users_message_vector, rag_count)
+    related_docs = vector_storage.transform_rag_output_into_str(raw_related_docs)
+
+    chat_history_length = config_manager.config.llm.chat_history_length
+    chat_ctx = memory.get_last_n_messages(chat_history_length)
+
+    prompt_ctx = PromptManager.generate_messages_prompt(related_docs, chat_ctx)
+    completion = llm.get_chat_completion(prompt_ctx)
 
     for chunk in completion:
         response_length = len(chunk.choices)

@@ -8,6 +8,7 @@ from src.llm import LLM
 from src.managers.configs import ConfigurationsManager
 
 config_manager = ConfigurationsManager()
+delimiter = '------------------------------------------'
 
 LOGGER = logging.getLogger(__name__)
 
@@ -28,7 +29,6 @@ class ChromaVectorManager:
         identifier = config_manager.config.llm.document_as_rag_source
         path = f"./data/documents/{identifier}.pdf"
         pdf_content = extract_text(path)
-        delimiter = '------------------------------------------'
         chunks = pdf_content.split(delimiter)
         chunks = [chunk.strip() for chunk in chunks if chunk.strip()]
         self.create_and_store_embeddings(identifier, chunks)
@@ -70,6 +70,21 @@ class ChromaVectorManager:
         )
         return response
 
+    @staticmethod
+    def transform_rag_output_into_str(rag_output) -> str:
+        output = []
+
+        for doc in rag_output['metadatas'][0]:
+            txt = doc['text']
+            txt = txt.replace("--", "")
+            txt = txt.replace("  ", " ")
+            txt = txt.strip()
+            txt = txt.replace("Q:", "\nQ:")
+
+            output.append(txt)
+
+        return "".join(output)
+
 
 """
 Directly execute this file to generate embeddings
@@ -77,8 +92,8 @@ Directly execute this file to generate embeddings
 if __name__ == "__main__":
     llm_client = LLM()
     x = ChromaVectorManager(llm_client)
-    x.generate_document_embeddings()
+    # x.generate_document_embeddings()
 
-    search_string = llm_client.get_embedding("how can i save money?")
-    response = x.get_related_documents(search_string, 3)
-    print(response)
+    search_string = llm_client.get_embedding("camera")
+    raw_response = x.get_related_documents(search_string, 3)
+    response = x.transform_rag_output_into_str(raw_response)

@@ -34,14 +34,13 @@ class LLM:
         return cls.embedding_client
 
     @classmethod
-    def get_chat_completion(cls, messages):
+    def get_chat_completion(cls, prompt_ctx):
         client = cls.get_chat_client()
-
         return client.chat.completions.create(
             model=config_manager.config.llm.model_name,
             max_tokens=config_manager.config.llm.max_tokens,
             stream=True,
-            messages=messages,
+            messages=prompt_ctx,
         )
 
     @classmethod
