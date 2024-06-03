@@ -21,8 +21,13 @@ async def on_chat_start_handler():
     Run once when the chat session starts for each user
     """
     memory = InMemoryChatHistoryManager()
-    memory.add_chat("system", "You are a helpful assistant.")
+    # memory.add_chat("system", "You are a helpful assistant.")
     chainlit.user_session.set("memory", memory)
+
+    await chainlit.Avatar(
+        name="Fam",
+        url="./public/favicon.ico",
+    ).send()
 
 
 @chainlit.on_message
