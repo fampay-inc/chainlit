@@ -14,6 +14,11 @@ class ConfigurationsManager:
         "secret__api_version": "API_VERSION",
         "secret__api_deployment": "API_DEPLOYMENT",
         "secret__embedding_deployment": "EMBEDDING_DEPLOYMENT",
+        "secret__tf_key": "TF_KEY",
+        "secret__tf_team_id": "TF_TEAM_ID",
+        "secret__tf_proj_id": "TF_PROJ_ID",
+        "secret__tf_ds_id": "TF_DS_ID"
+
     }
 
     class ConfigModel(BaseModel):

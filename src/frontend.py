@@ -8,6 +8,7 @@ from src.managers.chat_hisory import InMemoryChatHistoryManager
 from src.managers.configs import ConfigurationsManager
 from src.managers.prompt.PromptManager import PromptManager
 from src.vector_storage.chroma import ChromaVectorManager
+from src.tf_logging import track_tensorfuse_log
 
 LOGGER = logging.getLogger(__name__)
 
@@ -88,6 +89,16 @@ async def on_message_handler(message: chainlit.Message):
 
     memory.save_assistant_message(ai_response.content)
     await ai_response.update()
+
+    # TensorFuse Logging
+    log = {
+        "input": user_message,
+        "output": ai_response.content,
+        "source_docs": related_docs
+    }
+
+    track_tensorfuse_log(log)
+    
 
 
 @chainlit.on_stop
