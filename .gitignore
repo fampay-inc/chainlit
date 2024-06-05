@@ -2,3 +2,5 @@
 launch.sh
 .env
 data/processed/*
+venv
+__pycache__
