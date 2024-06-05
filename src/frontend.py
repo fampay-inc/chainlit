@@ -23,7 +23,7 @@ def oauth_callback(
         raw_user_data,
         default_user,
 ) -> Optional[chainlit.User]:
-    allowed_domains = ["fampay.in", "triotech.co.in", ]
+    allowed_domains = ["fampay.in", "triotech.co.in", "mail.triotech.co.in" ]
     allowed_emails = []
     if provider_id == "google":
         user_email = raw_user_data["email"]
