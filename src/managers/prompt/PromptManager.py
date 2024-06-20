@@ -21,7 +21,7 @@ SUPPORT_KNOWLEDGE:
 
 class PromptManager:
     @staticmethod
-    def generate_messages_prompt(related_documents: list, chat_history: list):
+    def generate_messages_prompt(related_documents: str, chat_history: list):
         base_prompt = [{
             "role": "system",
             "content": SYSTEM_PROMPT.format(related_documents=related_documents)

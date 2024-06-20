@@ -8,7 +8,7 @@ class LLMConfig(BaseModel):
 
     # https://platform.openai.com/docs/guides/embeddings/embedding-models
     embedding_model_name: StrictStr = Field(default="text-embedding-3-small", description="Model name for the LLM")
-    document_as_rag_source: StrictStr = Field(default="june-3", description="Path to the live source file")
+    document_as_rag_source: StrictStr = Field(default="knowledgebase.md", description="Path to the live source file")
 
     # chat configurations
     chat_history_length: int = Field(default=3, description="Number of chat history messages to pass as context")

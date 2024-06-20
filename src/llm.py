@@ -1,8 +1,11 @@
 from openai import AzureOpenAI
 
+from integrations.literal import LiteralAI
 from src.managers.configs import ConfigurationsManager
 
 config_manager = ConfigurationsManager()
+
+literal_client = LiteralAI.get_client()
 
 
 class LLM:
@@ -34,6 +37,7 @@ class LLM:
         return cls.embedding_client
 
     @classmethod
+    @literal_client.step(type="llm", name="get_chat_completion")
     def get_chat_completion(cls, prompt_ctx):
         client = cls.get_chat_client()
         return client.chat.completions.create(
@@ -44,6 +48,7 @@ class LLM:
         )
 
     @classmethod
+    @literal_client.step(type="llm", name="get_embedding")
     def get_embedding(cls, chunk: str):
         client = cls.get_embedding_client()
 

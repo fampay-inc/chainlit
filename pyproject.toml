@@ -13,8 +13,11 @@ chroma = "^0.2.0"
 chainlit = "^1.1.202"
 pydantic = "^2.7.2"
 pytest = "^8.2.1"
-pdfminer = "^20191125"
-pdfminer-six = "^20231228"
+uuid = "^1.30"
+asyncpg = "^0.29.0"
+sqlalchemy = "^2.0.31"
+aiohttp = "^3.9.5"
+greenlet = "^3.0.3"
 
 
 [build-system]

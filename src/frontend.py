@@ -1,20 +1,26 @@
 import logging
-from typing import Optional
+from uuid import uuid4
 
 import chainlit
+import chainlit.data as cl_data
 
+from src.integrations.literal import LiteralAI
 from src.llm import LLM
 from src.managers.chat_hisory import InMemoryChatHistoryManager
 from src.managers.configs import ConfigurationsManager
 from src.managers.prompt.PromptManager import PromptManager
-from src.vector_storage.chroma import ChromaVectorManager
+from src.managers.storage import DataLayerManager
 from src.tf_logging import track_tensorfuse_log
+from src.vector_storage.chroma import ChromaVectorManager
 
 LOGGER = logging.getLogger(__name__)
+
+cl_data._data_layer = DataLayerManager.get_client()
 
 llm = LLM()
 config_manager = ConfigurationsManager()
 vector_storage = ChromaVectorManager(llm)
+literal_client = LiteralAI.get_client()
 
 
 @chainlit.oauth_callback
@@ -23,14 +29,19 @@ def oauth_callback(
         token: str,
         raw_user_data,
         default_user,
-) -> Optional[chainlit.User]:
-    allowed_domains = ["fampay.in", "triotech.co.in", "mail.triotech.co.in" ]
+):
+    allowed_domains = ["fampay.in", "triotech.co.in", "mail.triotech.co.in"]
     allowed_emails = []
     if provider_id == "google":
         user_email = raw_user_data["email"]
-        user_domain = user_email.split('@')[-1]
+        user_name = raw_user_data["name"]
+        # given_name = raw_user_data["given_name"]
+        # id = raw_user_data["id"]
+        # picture = raw_user_data["picture"]
 
+        user_domain = user_email.split('@')[-1]
         if user_email in allowed_emails or user_domain in allowed_domains:
+            chainlit.user_session.set("user_name", user_name)
             return default_user
 
     return None
@@ -42,8 +53,8 @@ async def on_chat_start_handler():
     Run once when the chat session starts for each user
     """
     memory = InMemoryChatHistoryManager()
-    # memory.add_chat("system", "You are a helpful assistant.")
     chainlit.user_session.set("memory", memory)
+    chainlit.user_session.set("session_id", str(uuid4()))
 
     await chainlit.Avatar(
         name="Fam",
@@ -56,49 +67,54 @@ async def on_message_handler(message: chainlit.Message):
     """
     Run everytime the user sends a message
     """
-    memory: InMemoryChatHistoryManager = chainlit.user_session.get("memory")
+    session_id = chainlit.user_session.get("session_id")
+    user_name = chainlit.user_session.get("user_name")
 
-    ai_response = chainlit.Message(content="")
-    await ai_response.send()
+    with literal_client.thread(thread_id=session_id):
+        memory: InMemoryChatHistoryManager = chainlit.user_session.get("memory")
 
-    user_message = message.content.lower()
-    memory.save_user_message(user_message)
+        ai_response = chainlit.Message(content="")
+        await ai_response.send()
 
-    # get related documents from user's message
-    users_message_vector = llm.get_embedding(user_message)
+        literal_client.message(content=message.content.lower(), type="user_message", name=user_name)
+        user_message = message.content.lower()
+        memory.save_user_message(user_message)
 
-    rag_count = config_manager.config.llm.rag_context_length
-    raw_related_docs = vector_storage.get_related_documents(users_message_vector, rag_count)
-    related_docs = vector_storage.transform_rag_output_into_str(raw_related_docs)
+        # get related documents from user's message
+        users_message_vector = llm.get_embedding(user_message)
 
-    chat_history_length = config_manager.config.llm.chat_history_length
-    chat_ctx = memory.get_last_n_messages(chat_history_length)
+        rag_count = config_manager.config.llm.rag_context_length
+        raw_related_docs = vector_storage.get_related_documents(users_message_vector, rag_count)
+        related_docs = vector_storage.transform_rag_output_into_str(raw_related_docs)
 
-    prompt_ctx = PromptManager.generate_messages_prompt(related_docs, chat_ctx)
-    completion = llm.get_chat_completion(prompt_ctx)
+        chat_history_length = config_manager.config.llm.chat_history_length
+        chat_ctx = memory.get_last_n_messages(chat_history_length)
 
-    for chunk in completion:
-        response_length = len(chunk.choices)
-        if response_length == 0:
-            continue
+        prompt_ctx = PromptManager.generate_messages_prompt(related_docs, chat_ctx)
+        completion = llm.get_chat_completion(prompt_ctx)
 
-        if hasattr(chunk.choices[0], "delta"):
-            if hasattr(chunk.choices[0].delta, "content"):
-                if isinstance(chunk.choices[0].delta.content, str):
-                    await ai_response.stream_token(chunk.choices[0].delta.content)
+        for chunk in completion:
+            response_length = len(chunk.choices)
+            if response_length == 0:
+                continue
 
-    memory.save_assistant_message(ai_response.content)
-    await ai_response.update()
+            if hasattr(chunk.choices[0], "delta"):
+                if hasattr(chunk.choices[0].delta, "content"):
+                    if isinstance(chunk.choices[0].delta.content, str):
+                        await ai_response.stream_token(chunk.choices[0].delta.content)
 
-    # TensorFuse Logging
-    log = {
-        "input": user_message,
-        "output": ai_response.content,
-        "source_docs": related_docs
-    }
+        memory.save_assistant_message(ai_response.content)
+        literal_client.message(content=ai_response.content, type="assistant_message", name="FamAI")
+        await ai_response.update()
 
-    track_tensorfuse_log(log)
-    
+        # TensorFuse Logging
+        log = {
+            "input": user_message,
+            "output": ai_response.content,
+            "source_docs": related_docs
+        }
+
+        track_tensorfuse_log(log)
 
 
 @chainlit.on_stop
@@ -118,3 +134,5 @@ def on_chat_end():
     memory: InMemoryChatHistoryManager = chainlit.user_session.get("memory")
     for x in memory.chat_history:
         LOGGER.info(f"{x['role']}: {x['content']}")
+
+    literal_client.flush_and_stop()

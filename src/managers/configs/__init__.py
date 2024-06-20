@@ -17,8 +17,9 @@ class ConfigurationsManager:
         "secret__tf_key": "TF_KEY",
         "secret__tf_team_id": "TF_TEAM_ID",
         "secret__tf_proj_id": "TF_PROJ_ID",
-        "secret__tf_ds_id": "TF_DS_ID"
-
+        "secret__tf_ds_id": "TF_DS_ID",
+        "secret__db_conn_str": "DB_CONN",
+        "secret__literal_api_key": "LITERAL_API_KEY_CUSTOM",
     }
 
     class ConfigModel(BaseModel):

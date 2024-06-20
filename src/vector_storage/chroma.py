@@ -2,10 +2,10 @@ import logging
 
 import chromadb
 from chromadb.utils.embedding_functions import OpenAIEmbeddingFunction
-from pdfminer.high_level import extract_text
 
 from src.llm import LLM
 from src.managers.configs import ConfigurationsManager
+from src.vector_storage.utils import get_text_from_file
 
 config_manager = ConfigurationsManager()
 delimiter = '------------------------------------------'
@@ -27,9 +27,10 @@ class ChromaVectorManager:
 
     def generate_document_embeddings(self):
         identifier = config_manager.config.llm.document_as_rag_source
-        path = f"./data/documents/{identifier}.pdf"
-        pdf_content = extract_text(path)
-        chunks = pdf_content.split(delimiter)
+        path = f"./data/documents/{identifier}"
+
+        text_content = get_text_from_file(path)
+        chunks = text_content.split(delimiter)
         chunks = [chunk.strip() for chunk in chunks if chunk.strip()]
         self.create_and_store_embeddings(identifier, chunks)
 
@@ -92,7 +93,7 @@ Directly execute this file to generate embeddings
 if __name__ == "__main__":
     llm_client = LLM()
     x = ChromaVectorManager(llm_client)
-    # x.generate_document_embeddings()
+    x.generate_document_embeddings()
 
     search_string = llm_client.get_embedding("camera")
     raw_response = x.get_related_documents(search_string, 3)
