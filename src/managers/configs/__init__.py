@@ -18,8 +18,17 @@ class ConfigurationsManager:
         "secret__tf_team_id": "TF_TEAM_ID",
         "secret__tf_proj_id": "TF_PROJ_ID",
         "secret__tf_ds_id": "TF_DS_ID",
-        "secret__db_conn_str": "DB_CONN",
+        
         "secret__literal_api_key": "LITERAL_API_KEY_CUSTOM",
+        "secret__db_conn_str": "DB_CONN",
+
+        "llm__temperature": "LLM_TEMPERATURE",
+        "llm__model_name": "LLM_MODEL_NAME",
+        "llm__max_tokens": "LLM_MAX_TOKENS",
+        "llm__embedding_model_name": "LLM_EMBEDDING_MODEL_NAME",
+        "llm__document_as_rag_source": "LLM_DOCUMENT_AS_RAG_SOURCE",
+        "llm__chat_history_length": "LLM_CHAT_HISTORY_LENGTH",
+        "llm__rag_context_length": "LLM_RAG_CONTEXT_LENGTH",
     }
 
     class ConfigModel(BaseModel):

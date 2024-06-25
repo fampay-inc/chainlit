@@ -42,7 +42,7 @@ class LLM:
         client = cls.get_chat_client()
         return client.chat.completions.create(
             model=config_manager.config.llm.model_name,
-            max_tokens=config_manager.config.llm.max_tokens,
+            max_tokens=int(config_manager.config.llm.max_tokens),
             stream=True,
             messages=prompt_ctx,
         )

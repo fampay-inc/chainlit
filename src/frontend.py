@@ -83,11 +83,12 @@ async def on_message_handler(message: chainlit.Message):
         # get related documents from user's message
         users_message_vector = llm.get_embedding(user_message)
 
-        rag_count = config_manager.config.llm.rag_context_length
+        rag_count = int(config_manager.config.llm.rag_context_length)
         raw_related_docs = vector_storage.get_related_documents(users_message_vector, rag_count)
         related_docs = vector_storage.transform_rag_output_into_str(raw_related_docs)
 
-        chat_history_length = config_manager.config.llm.chat_history_length
+        chat_history_length = int(config_manager.config.llm.chat_history_length)
+
         chat_ctx = memory.get_last_n_messages(chat_history_length)
 
         prompt_ctx = PromptManager.generate_messages_prompt(related_docs, chat_ctx)
