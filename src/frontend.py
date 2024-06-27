@@ -41,7 +41,6 @@ def oauth_callback(
 
         user_domain = user_email.split('@')[-1]
         if user_email in allowed_emails or user_domain in allowed_domains:
-            chainlit.user_session.set("user_name", user_name)
             return default_user
 
     return None
@@ -68,7 +67,7 @@ async def on_message_handler(message: chainlit.Message):
     Run everytime the user sends a message
     """
     session_id = chainlit.user_session.get("session_id")
-    user_name = chainlit.user_session.get("user_name")
+    user_name = chainlit.user_session.get("user").identifier
 
     with literal_client.thread(thread_id=session_id):
         memory: InMemoryChatHistoryManager = chainlit.user_session.get("memory")
