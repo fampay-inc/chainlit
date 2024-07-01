@@ -30,6 +30,8 @@ def oauth_callback(
         raw_user_data,
         default_user,
 ):
+    print("provider_id", provider_id)
+
     allowed_domains = ["fampay.in", "triotech.co.in", "mail.triotech.co.in"]
     allowed_emails = []
     if provider_id == "google":
