@@ -71,7 +71,6 @@ class SlackEmitter(BaseChainlitEmitter):
         is_message = step_type in [
             "user_message",
             "assistant_message",
-            "system_message",
         ]
         is_chain_of_thought = bool(step_dict.get("parentId"))
         is_empty_output = not step_dict.get("output")
@@ -177,8 +176,8 @@ async def get_user(slack_user_id: str):
     slack_user = await slack_app.client.users_info(user=slack_user_id)
     slack_user_profile = slack_user["user"]["profile"]
 
-    user_email = slack_user_profile.get("email")
-    user = User(identifier=USER_PREFIX + user_email, metadata=slack_user_profile)
+    user_identifier = slack_user_profile.get("email") or slack_user_id
+    user = User(identifier=USER_PREFIX + user_identifier, metadata=slack_user_profile)
 
     users_by_slack_id[slack_user_id] = user
 
@@ -333,7 +332,7 @@ async def handle_app_mentions(event, say):
 async def handle_message(message, say):
     user = await get_user(message["user"])
     thread_name = f"{user.identifier} Slack DM"
-    await process_slack_message(message, say, thread_name)
+    await process_slack_message(message, say, thread_name, True)
 
 
 @slack_app.block_action("thumbdown")
@@ -342,8 +341,7 @@ async def thumb_down(ack, context, body):
     step_id = body["actions"][0]["value"]
 
     if data_layer := get_data_layer():
-        thread_id = context_var.get().session.thread_id
-        feedback = Feedback(forId=step_id, threadId=thread_id, value=0)
+        feedback = Feedback(forId=step_id, value=0)
         await data_layer.upsert_feedback(feedback)
 
     text = body["message"]["text"]
@@ -369,8 +367,7 @@ async def thumb_up(ack, context, body):
     step_id = body["actions"][0]["value"]
 
     if data_layer := get_data_layer():
-        thread_id = context_var.get().session.thread_id
-        feedback = Feedback(forId=step_id, threadId=thread_id, value=1)
+        feedback = Feedback(forId=step_id, value=1)
         await data_layer.upsert_feedback(feedback)
 
     text = body["message"]["text"]

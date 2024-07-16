@@ -34,8 +34,7 @@ class FeedbackView(View):
     async def thumbs_down(self, interaction: discord.Interaction, button: Button):
         if data_layer := get_data_layer():
             try:
-                thread_id = context_var.get().session.thread_id
-                feedback = Feedback(forId=self.step_id, threadId=thread_id, value=0)
+                feedback = Feedback(forId=self.step_id, value=0)
                 await data_layer.upsert_feedback(feedback)
             except Exception as e:
                 logger.error(f"Error upserting feedback: {e}")
@@ -47,8 +46,7 @@ class FeedbackView(View):
     async def thumbs_up(self, interaction: discord.Interaction, button: Button):
         if data_layer := get_data_layer():
             try:
-                thread_id = context_var.get().session.thread_id
-                feedback = Feedback(forId=self.step_id, threadId=thread_id, value=1)
+                feedback = Feedback(forId=self.step_id, value=1)
                 await data_layer.upsert_feedback(feedback)
             except Exception as e:
                 logger.error(f"Error upserting feedback: {e}")
@@ -104,7 +102,6 @@ class DiscordEmitter(BaseChainlitEmitter):
         is_message = step_type in [
             "user_message",
             "assistant_message",
-            "system_message",
         ]
         is_chain_of_thought = bool(step_dict.get("parentId"))
         is_empty_output = not step_dict.get("output")
@@ -315,8 +312,11 @@ async def on_message(message: discord.Message):
     elif isinstance(message.channel, discord.GroupChannel):
         thread_name = f"{message.channel.name}"
     elif isinstance(message.channel, discord.TextChannel):
+        # Discord limits thread names to 100 characters and does not create
+        # threads from empty messages.
+        discord_thread_name = clean_content(message)[:100] or "Untitled"
         channel = await message.channel.create_thread(
-            name=clean_content(message), message=message
+            name=discord_thread_name, message=message
         )
         thread_name = f"{channel.name}"
     else:

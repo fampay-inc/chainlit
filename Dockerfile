@@ -8,21 +8,27 @@ ENV PYTHONUNBUFFERED=1 \
     PIP_DEFAULT_TIMEOUT=100 \
     PROJECT_SRC=/code
 
+# Install system dependencies
 RUN apt-get update && apt-get install -qq -y gettext build-essential --no-install-recommends
 
 # Set working directory
 WORKDIR $PROJECT_SRC
 
-# Copy the existing virtual environment from local system
-COPY venv ./venv
+# Copy requirements file and install dependencies
+COPY requirements.txt .
+RUN pip install --upgrade pip
+RUN pip install -r requirements.txt
 
-# Set the PATH to use the copied virtual environment
-ENV PATH="$PROJECT_SRC/venv/bin:$PATH"
+# Install the package from the GitHub repository
+RUN pip install git+https://github.com/fampay-inc/chainlit.git@main
 
 # Copy the rest of the project files
 COPY . .
 
-## Scripts and config
+# Set the PATH to use the virtual environment (if needed)
+ENV PATH="$PROJECT_SRC/venv/bin:$PATH"
+
+# Scripts and config
 WORKDIR /
 
 # Command to initialize project
@@ -31,5 +37,5 @@ WORKDIR $PROJECT_SRC
 RUN chmod +x scripts/launch.sh
 ENTRYPOINT [ "scripts/launch.sh" ]
 
-# Port
+# Expose the necessary port
 EXPOSE 8000
