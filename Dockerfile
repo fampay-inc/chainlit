@@ -18,8 +18,6 @@ WORKDIR $PROJECT_SRC
 COPY requirements.txt .
 RUN pip install --upgrade pip
 RUN pip install -r requirements.txt
-
-# Install the package from the GitHub repository
 RUN pip install git+https://github.com/fampay-inc/chainlit.git@main
 
 # Copy the rest of the project files
