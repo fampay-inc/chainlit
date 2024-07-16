@@ -8,7 +8,7 @@ ENV PYTHONUNBUFFERED=1 \
     PIP_DEFAULT_TIMEOUT=100 \
     PROJECT_SRC=/code
 
-# RUN apt-get update && apt-get install -qq -y gettext build-essential --no-install-recommends
+RUN apt-get update && apt-get install -qq -y gettext build-essential --no-install-recommends
 
 # Set working directory
 WORKDIR $PROJECT_SRC
