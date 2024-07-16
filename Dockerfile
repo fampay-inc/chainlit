@@ -29,7 +29,7 @@ WORKDIR /
 WORKDIR $PROJECT_SRC
 
 RUN chmod +x scripts/launch.sh
-RUN source source venv/bin/activate
+RUN source venv/bin/activate
 RUN pip install -r requirements.txt
 ENTRYPOINT [ "scripts/launch.sh" ]
 
