@@ -29,8 +29,6 @@ WORKDIR /
 WORKDIR $PROJECT_SRC
 
 RUN chmod +x scripts/launch.sh
-RUN source venv/bin/activate
-RUN pip install -r requirements.txt
 ENTRYPOINT [ "scripts/launch.sh" ]
 
 # Port
